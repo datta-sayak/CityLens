@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Upload, MapPin, Loader2, CheckCircle } from "lucide-react";
 import { db, storage } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
@@ -12,6 +12,13 @@ export default function ReportPage() {
   const { user } = useAuth();
   const router = useRouter();
   
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (user === null) {
+      router.push("/login");
+    }
+  }, [user, router]);
+
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [location, setLocation] = useState(null);
@@ -21,6 +28,20 @@ export default function ReportPage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [aiAnalyzed, setAiAnalyzed] = useState(false);
   const [aiData, setAiData] = useState(null);
+
+  // Show loading while checking authentication
+  if (user === undefined) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-green-600" />
+      </div>
+    );
+  }
+
+  // Don't render if not authenticated (will redirect)
+  if (user === null) {
+    return null;
+  }
 
   const handleLocationClick = () => {
     if (!navigator.geolocation) {
@@ -82,22 +103,43 @@ export default function ReportPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!imageFile) {
+      alert("Please upload an image before submitting.");
+      return;
+    }
+
     console.log("Form submitted - starting...");
     setLoading(true);
 
     try {
-      // For now, skip image upload and just save the report
-      console.log("Saving to Firestore (without image upload)...");
+      console.log("Uploading image to Cloudinary...", imageFile.name);
 
+      // Upload to Cloudinary
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: previewUrl }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const { url: imageUrl } = await response.json();
+
+      console.log("Image uploaded successfully:", imageUrl);
+
+      console.log("Saving to Firestore...");
       const docRef = await addDoc(collection(db, "issues"), {
         title: formData.title,
         description: formData.description,
         location: location || null,
-        imageUrl: "", // Empty for now
-        status: "OPEN",
-        createdAt: serverTimestamp(),
-        userId: user?.uid || "anonymous",
-        userEmail: user?.email || "anonymous",
+        imageUrl,
+        category: aiData?.defectType || "Uncategorized",
+        severity: aiData?.severity || "Unknown",
+        reportedBy: user.uid,
+        status: "pending",
+        createdAt: new Date().toISOString(),
       });
 
       console.log("Report saved successfully:", docRef.id);
@@ -140,7 +182,7 @@ export default function ReportPage() {
           <form onSubmit={handleSubmit} className="space-y-8">
             <div className="space-y-3">
               <label className="text-sm font-semibold text-gray-700">
-                Photo Evidence <span className="text-xs text-gray-500">(Optional - Firebase Storage needed for uploads)</span>
+                Photo Evidence <span className="text-red-500">*</span>
               </label>
               <div className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:border-green-500 hover:bg-green-50/50 transition-all ${previewUrl ? 'border-green-600 bg-green-50/30' : 'border-gray-300'}`}>
             <input
@@ -287,7 +329,7 @@ export default function ReportPage() {
 
             <button 
               type="submit" 
-              disabled={loading || !formData.title}
+              disabled={loading || !formData.title || !imageFile}
               className="w-full h-11 px-8 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 text-sm font-medium inline-flex items-center justify-center disabled:opacity-50 disabled:pointer-events-none"
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

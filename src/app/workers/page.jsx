@@ -1,51 +1,35 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAuth } from "@/components/AuthProvider";
 import { useRouter } from "next/navigation";
-import { db } from "@/lib/firebase";
-import { collection, query, orderBy, onSnapshot, doc, updateDoc } from "firebase/firestore";
-import { CheckCircle, Clock, AlertCircle, RefreshCw } from "lucide-react";
+import { auth, db } from "@/lib/firebase";
+import { collection, query, where, getDocs, doc, getDoc, orderBy } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
+import Navbar from "@/components/Navbar";
+import { CheckCircle, Clock, AlertCircle, PlayCircle } from "lucide-react";
 
 const STATUS_STYLES = {
-  OPEN: "border border-blue-600 text-blue-600",
-  IN_PROGRESS: "bg-blue-600 text-white",
-  RESOLVED: "bg-gray-100 text-gray-400",
+  assigned: "border border-blue-600 text-blue-600",
+  in_progress: "bg-blue-600 text-white",
+  resolved: "bg-green-600 text-white",
 };
 
-function TaskCard({ task }) {
-  const [updating, setUpdating] = useState(false);
-
-  const updateStatus = async (newStatus) => {
-    if (!confirm(`Are you sure you want to mark this task as ${newStatus}?`)) return;
-    
-    setUpdating(true);
-    try {
-      await updateDoc(doc(db, "issues", task.id), {
-        status: newStatus,
-        updatedAt: new Date()
-      });
-    } catch (error) {
-      console.error("Error updating status:", error);
-      alert("Failed to update status");
-    } finally {
-      setUpdating(false);
-    }
-  };
+function TaskCard({ task, onUpdateStatus, updating }) {
+  const [notes, setNotes] = useState('');
 
   return (
-    <div className="rounded-2xl border-2 border-gray-200 bg-white p-6 flex flex-col gap-4 hover:border-orange-300 hover:shadow-xl hover:shadow-orange-100/50 transition-all">
+    <div className="rounded-2xl border-2 border-gray-200 bg-white p-6 flex flex-col gap-4 hover:border-emerald-300 hover:shadow-xl hover:shadow-emerald-100/50 transition-all">
       <div className="flex justify-between items-start">
         <div>
           <h3 className="font-bold text-xl line-clamp-1 text-gray-900">{task.title}</h3>
           <div className="mt-2">
-            <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${STATUS_STYLES[task.status]}`}>
-              {task.status.replace("_", " ")}
+            <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${STATUS_STYLES[task.status] || 'bg-gray-100 text-gray-600'}`}>
+              {task.status?.replace("_", " ").toUpperCase() || 'ASSIGNED'}
             </span>
           </div>
         </div>
         <div className="text-xs text-gray-500 whitespace-nowrap">
-          {task.createdAt?.seconds ? new Date(task.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}
+          {task.createdAt ? new Date(task.createdAt).toLocaleDateString() : 'N/A'}
         </div>
       </div>
 
@@ -58,45 +42,39 @@ function TaskCard({ task }) {
       <p className="text-sm text-gray-600 line-clamp-3 flex-1">{task.description}</p>
 
       <div className="flex flex-col gap-2 mt-auto pt-4 border-t border-gray-100">
-        {task.status === "OPEN" && (
+        {task.status === "assigned" && (
           <button 
-            onClick={() => updateStatus("IN_PROGRESS")} 
+            onClick={() => onUpdateStatus(task.id, "in_progress")} 
             disabled={updating}
-            className="w-full h-10 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 text-sm font-medium inline-flex items-center justify-center disabled:opacity-50"
+            className="w-full h-10 px-4 py-2 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 text-sm font-medium inline-flex items-center justify-center disabled:opacity-50 gap-2"
           >
-            {updating && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
+            <PlayCircle className="h-4 w-4" />
             Start Working
           </button>
         )}
-        {task.status === "IN_PROGRESS" && (
-          <div className="grid grid-cols-2 gap-2">
+        {task.status === "in_progress" && (
+          <div className="space-y-2">
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Add work notes (optional)"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              rows="2"
+            />
             <button 
-              onClick={() => updateStatus("RESOLVED")} 
+              onClick={() => onUpdateStatus(task.id, "resolved", notes)} 
               disabled={updating}
-              className="h-10 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 text-sm font-medium inline-flex items-center justify-center disabled:opacity-50"
+              className="w-full h-10 px-4 py-2 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 text-sm font-medium inline-flex items-center justify-center disabled:opacity-50 gap-2"
             >
-              {updating && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
+              <CheckCircle className="h-4 w-4" />
               Mark Resolved
-            </button>
-            <button 
-              onClick={() => updateStatus("OPEN")} 
-              disabled={updating}
-              className="h-10 px-4 py-2 rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium inline-flex items-center justify-center disabled:opacity-50"
-            >
-              {updating && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
-              Re-open
             </button>
           </div>
         )}
-        {task.status === "RESOLVED" && (
-          <button 
-            onClick={() => updateStatus("IN_PROGRESS")} 
-            disabled={updating}
-            className="w-full h-10 px-4 py-2 rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium inline-flex items-center justify-center disabled:opacity-50"
-          >
-            {updating && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
-            Re-open Case
-          </button>
+        {task.status === "resolved" && (
+          <div className="text-center text-sm text-green-700 font-medium py-2">
+            ✓ Resolved - Awaiting closure
+          </div>
         )}
       </div>
     </div>
@@ -104,102 +82,158 @@ function TaskCard({ task }) {
 }
 
 export default function WorkerDashboard() {
-  const { user, userData, loading: authLoading } = useAuth();
   const router = useRouter();
-  const [tasks, setTasks] = useState([]);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [tasks, setTasks] = useState([]);
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
-    if (authLoading) return;
-    
-    if (!user) {
-      router.push("/login?redirect=/workers");
-    } else if (userData?.role !== 'worker') {
-      router.push("/");
-    }
-  }, [user, userData, authLoading, router]);
-
-  useEffect(() => {
-    const q = query(collection(db, "issues"), orderBy("createdAt", "desc"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setTasks(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        // Verify worker role
+        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        if (userDoc.exists() && userDoc.data().role === 'worker') {
+          setUser(currentUser);
+          fetchAssignedIssues(currentUser.uid);
+        } else {
+          router.push('/login');
+        }
+      } else {
+        router.push('/login');
+      }
       setLoading(false);
     });
-    return unsubscribe;
-  }, []);
 
-  const stats = {
-    open: tasks.filter(t => t.status === "OPEN").length,
-    inProgress: tasks.filter(t => t.status === "IN_PROGRESS").length,
-    resolved: tasks.filter(t => t.status === "RESOLVED").length
+    return () => unsubscribe();
+  }, [router]);
+
+  const fetchAssignedIssues = async (workerUid) => {
+    try {
+      const issuesQuery = query(
+        collection(db, 'issues'),
+        where('assignedTo', '==', workerUid),
+        orderBy('createdAt', 'desc')
+      );
+      const snapshot = await getDocs(issuesQuery);
+      const issuesData = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setTasks(issuesData);
+    } catch (error) {
+      console.error('Error fetching assigned issues:', error);
+    }
   };
 
-  if (authLoading || !user || userData?.role !== 'worker') {
+  const handleUpdateStatus = async (issueId, newStatus, notes = '') => {
+    setUpdating(true);
+    try {
+      const response = await fetch('/api/issues/update-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          issueId,
+          status: newStatus,
+          userId: user.uid,
+          notes,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('Status updated successfully!');
+        fetchAssignedIssues(user.uid);
+      } else {
+        alert(data.error || 'Failed to update status');
+      }
+    } catch (error) {
+      console.error('Error updating status:', error);
+      alert('Failed to update status');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const stats = {
+    assigned: tasks.filter(t => t.status === "assigned").length,
+    inProgress: tasks.filter(t => t.status === "in_progress").length,
+    resolved: tasks.filter(t => t.status === "resolved").length
+  };
+
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full" />
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 flex items-center justify-center">
+        <div className="text-xl text-emerald-700">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 py-10 px-4 md:px-24">
-      <div className="container mx-auto">
-        <div className="mb-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-green-600 to-emerald-600 shadow-lg shadow-green-500/30 mb-6">
-            <CheckCircle className="h-8 w-8 text-white" />
-          </div>
-          <h1 className="text-5xl font-bold tracking-tight bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3">Worker Dashboard</h1>
-          <p className="text-gray-600 text-lg">Manage and update infrastructure issues reported by citizens.</p>
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-emerald-900 mb-2">Worker Dashboard</h1>
+          <p className="text-emerald-700">Manage your assigned infrastructure issues</p>
         </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl shadow-green-100/50 border-2 border-green-100 p-8 hover:scale-105 transition-transform">
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <p className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-2">Pending</p>
-                            <h2 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent">{stats.open}</h2>
-                        </div>
-                        <div className="h-14 w-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/30">
-                            <AlertCircle className="h-7 w-7 text-white" />
-                        </div>
-                    </div>
-                </div>
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl shadow-emerald-100/50 border-2 border-emerald-100 p-8 hover:scale-105 transition-transform">
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <p className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-2">In Progress</p>
-                            <h2 className="text-4xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-800 bg-clip-text text-transparent">{stats.inProgress}</h2>
-                        </div>
-                        <div className="h-14 w-14 bg-gradient-to-br from-violet-500 to-violet-600 rounded-2xl flex items-center justify-center shadow-lg shadow-violet-500/30">
-                            <Clock className="h-7 w-7 text-white" />
-                        </div>
-                    </div>
-                </div>
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl shadow-green-100/50 border-2 border-green-100 p-8 hover:scale-105 transition-transform">
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <p className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-2">Resolved</p>
-                            <h2 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-800 bg-clip-text text-transparent">{stats.resolved}</h2>
-                        </div>
-                        <div className="h-14 w-14 bg-gradient-to-br from-purple-500 to-violet-600 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/30">
-                            <CheckCircle className="h-7 w-7 text-white" />
-                        </div>
-                    </div>
-                </div>
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-emerald-100">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-2">Assigned</p>
+                <h2 className="text-4xl font-bold text-emerald-900">{stats.assigned}</h2>
+              </div>
+              <div className="h-12 w-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                <AlertCircle className="h-6 w-6 text-blue-600" />
+              </div>
             </div>
+          </div>
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-emerald-100">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-2">In Progress</p>
+                <h2 className="text-4xl font-bold text-emerald-900">{stats.inProgress}</h2>
+              </div>
+              <div className="h-12 w-12 bg-orange-100 rounded-xl flex items-center justify-center">
+                <Clock className="h-6 w-6 text-orange-600" />
+              </div>
+            </div>
+          </div>
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-emerald-100">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-2">Resolved</p>
+                <h2 className="text-4xl font-bold text-emerald-900">{stats.resolved}</h2>
+              </div>
+              <div className="h-12 w-12 bg-green-100 rounded-xl flex items-center justify-center">
+                <CheckCircle className="h-6 w-6 text-green-600" />
+              </div>
+            </div>
+          </div>
+        </div>
 
-            {loading ? (
-                <div className="flex justify-center py-20">
-                    <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {tasks.map(task => (
-                        <TaskCard key={task.id} task={task} />
-                    ))}
-                </div>
-            )}
+        {/* Tasks Grid */}
+        {tasks.length === 0 ? (
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-12 text-center shadow-lg border border-emerald-100">
+            <AlertCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">No Assigned Issues</h3>
+            <p className="text-gray-600">You don't have any issues assigned to you yet.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {tasks.map(task => (
+              <TaskCard 
+                key={task.id} 
+                task={task} 
+                onUpdateStatus={handleUpdateStatus}
+                updating={updating}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

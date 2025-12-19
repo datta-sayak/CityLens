@@ -26,6 +26,8 @@ export default function RegisterPage() {
             toast.success("Account created successfully!");
             if (role === 'worker') {
                 router.push("/workers");
+            } else if (role === 'government') {
+                router.push("/government/dashboard");
             } else {
                 router.push("/dashboard");
             }
@@ -109,20 +111,21 @@ export default function RegisterPage() {
                         </div>
 
                         {/* Role Selection */}
-                        <div className="relative">
-                            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                <Briefcase className="h-5 w-5 text-gray-400" />
+                        <div className="relative group">
+                            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                                <Briefcase className="h-5 w-5 text-gray-400 group-focus-within:text-emerald-600 transition-colors" />
                             </div>
                             <select
                                 id="role"
                                 name="role"
                                 required
-                                className="block w-full rounded-md border border-gray-300 bg-white py-2 pl-10 pr-3 text-sm text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                className="block w-full rounded-xl border-2 border-gray-200 bg-gray-50 py-3 pl-12 pr-4 text-sm text-gray-700 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all appearance-none cursor-pointer"
                                 value={role}
                                 onChange={(e) => setRole(e.target.value)}
                             >
-                                <option value="citizen">I am a Citizen</option>
-                                <option value="worker">I am a Municipal Worker</option>
+                                <option value="citizen">Citizen - Report Issues</option>
+                                <option value="worker">Worker - Fix Issues</option>
+                                <option value="government">Government - Manage Workflow</option>
                             </select>
                         </div>
                     </div>

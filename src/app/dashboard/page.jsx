@@ -14,9 +14,11 @@ import { useRouter } from "next/navigation";
 
 function StatusBadge({ status }) {
     switch (status) {
-        case "OPEN": return <Badge variant="destructive">Open</Badge>;
-        case "IN_PROGRESS": return <Badge variant="default">In Progress</Badge>;
-        case "RESOLVED": return <Badge variant="secondary">Resolved</Badge>;
+        case "pending": return <Badge variant="destructive">Pending</Badge>;
+        case "assigned": return <Badge variant="default">Assigned</Badge>;
+        case "in_progress": return <Badge variant="default">In Progress</Badge>;
+        case "resolved": return <Badge variant="secondary">Resolved</Badge>;
+        case "closed": return <Badge variant="outline">Closed</Badge>;
         default: return <Badge variant="outline">{status}</Badge>;
     }
 }
@@ -37,7 +39,7 @@ export default function MyReportsPage() {
         if (user) {
             const q = query(
                 collection(db, "issues"),
-                where("userId", "==", user.uid),
+                where("reportedBy", "==", user.uid),
                 orderBy("createdAt", "desc")
             );
 
@@ -56,9 +58,11 @@ export default function MyReportsPage() {
 
     const stats = {
         all: reports.length,
-        open: reports.filter(r => r.status === "OPEN").length,
-        inProgress: reports.filter(r => r.status === "IN_PROGRESS").length,
-        resolved: reports.filter(r => r.status === "RESOLVED").length,
+        pending: reports.filter(r => r.status === "pending").length,
+        assigned: reports.filter(r => r.status === "assigned").length,
+        inProgress: reports.filter(r => r.status === "in_progress").length,
+        resolved: reports.filter(r => r.status === "resolved").length,
+        closed: reports.filter(r => r.status === "closed").length,
     };
 
     if (authLoading || (!user && loading)) {
@@ -78,11 +82,12 @@ export default function MyReportsPage() {
 
                 {/* Filter Tabs */}
                 <Tabs value={filter} onValueChange={setFilter} className="mb-8">
-                    <TabsList className="grid w-full max-w-2xl grid-cols-4 bg-white/80 backdrop-blur-xl border border-gray-200 shadow-lg">
+                    <TabsList className="grid w-full max-w-2xl grid-cols-5 bg-white/80 backdrop-blur-xl border border-gray-200 shadow-lg">
                         <TabsTrigger value="ALL">All ({stats.all})</TabsTrigger>
-                        <TabsTrigger value="OPEN">Open ({stats.open})</TabsTrigger>
-                        <TabsTrigger value="IN_PROGRESS">In Progress ({stats.inProgress})</TabsTrigger>
-                        <TabsTrigger value="RESOLVED">Resolved ({stats.resolved})</TabsTrigger>
+                        <TabsTrigger value="pending">Pending ({stats.pending})</TabsTrigger>
+                        <TabsTrigger value="assigned">Assigned ({stats.assigned})</TabsTrigger>
+                        <TabsTrigger value="in_progress">In Progress ({stats.inProgress})</TabsTrigger>
+                        <TabsTrigger value="resolved">Resolved ({stats.resolved})</TabsTrigger>
                     </TabsList>
                 </Tabs>
 
@@ -121,6 +126,19 @@ export default function MyReportsPage() {
                                 </div>
                                 <div className="p-6 flex-1 flex flex-col">
                                     <h3 className="font-bold text-xl mb-2 line-clamp-1 text-gray-900">{report.title}</h3>
+                                    <div className="flex flex-wrap gap-2 mb-3">
+                                        {report.category && (
+                                            <Badge variant="outline" className="text-xs">{report.category}</Badge>
+                                        )}
+                                        {report.severity && (
+                                            <Badge 
+                                                variant={report.severity === 'High' ? 'destructive' : report.severity === 'Medium' ? 'default' : 'secondary'}
+                                                className="text-xs"
+                                            >
+                                                Severity: {report.severity}
+                                            </Badge>
+                                        )}
+                                    </div>
                                     <p className="text-gray-600 text-sm line-clamp-2 mb-5 flex-1">
                                     {report.description}
                                 </p>

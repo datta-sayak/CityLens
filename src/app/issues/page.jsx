@@ -132,43 +132,19 @@ export default function PublicBoardPage() {
                         <p className="text-gray-600">Check back later for updates</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="space-y-3">
                         {issues.map((issue) => (
-                            <div key={issue.id} className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-2xl hover:scale-105 transition-all">
-                                {/* Image */}
-                                {issue.imageUrl && (
-                                    <div className="relative h-56 bg-gradient-to-br from-gray-100 to-gray-200">
-                                        <img
-                                            src={issue.imageUrl}
-                                            alt={issue.title}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    </div>
-                                )}
-
-                                {/* Content */}
-                                <div className="p-6">
-                                    <div className="flex items-start justify-between mb-3">
-                                        <h3 className="text-xl font-bold text-gray-900 line-clamp-1">{issue.title}</h3>
+                            <div key={issue.id} className="bg-white/80 backdrop-blur-xl rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md hover:border-green-300 transition-all">
+                                <div className="flex items-center justify-between gap-4">
+                                    <div className="flex items-center gap-4 flex-1 min-w-0">
                                         {getStatusIcon(issue.status)}
+                                        <h3 className="text-lg font-semibold text-gray-900 truncate flex-1">{issue.title}</h3>
                                     </div>
-
-                                    <p className="text-sm text-gray-600 line-clamp-2 mb-5">{issue.description}</p>
-
-                                    {/* Location */}
-                                    {issue.location && (
-                                        <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
-                                            <MapPin className="h-4 w-4" />
-                                            <span>{issue.location.lat.toFixed(4)}, {issue.location.lng.toFixed(4)}</span>
-                                        </div>
-                                    )}
-
-                                    {/* Footer */}
-                                    <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                                    <div className="flex items-center gap-3 flex-shrink-0">
                                         <span className={`text-xs font-medium px-3 py-1 rounded-full border ${getStatusBadge(issue.status)}`}>
                                             {issue.status === "in-progress" ? "In Progress" : issue.status.charAt(0).toUpperCase() + issue.status.slice(1)}
                                         </span>
-                                        <span className="text-xs text-gray-500">{formatDate(issue.createdAt)}</span>
+                                        <span className="text-sm text-gray-500">{formatDate(issue.createdAt)}</span>
                                     </div>
                                 </div>
                             </div>
@@ -177,15 +153,6 @@ export default function PublicBoardPage() {
                 )}
             </div>
 
-            {/* Progress Message */}
-            {stats.total > 0 && (
-                <div className="max-w-7xl mx-auto mt-12 bg-blue-50 border border-blue-200 rounded-xl p-6 text-center">
-                    <p className="text-blue-900 font-medium">
-                        🎉 {stats.resolved > 0 ? `${stats.resolved} issue${stats.resolved !== 1 ? 's' : ''} resolved!` : 'Your government is actively working on reported issues.'} 
-                        {stats.inProgress > 0 && ` ${stats.inProgress} currently in progress.`}
-                    </p>
-                </div>
-            )}
         </div>
     );
 }

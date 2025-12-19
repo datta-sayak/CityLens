@@ -10,11 +10,6 @@ export default function Navbar() {
     const pathname = usePathname();
     const { user, userData, logout } = useAuth();
 
-    // Default Public Links
-    const navItems = [
-        { href: "/issues", label: "Public Board" },
-    ];
-
     return (
         <nav className="w-full py-3 px-6 md:px-24 flex items-center justify-between bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
             <Link href="/" className="text-xl font-bold tracking-tight text-blue-600 flex items-center gap-3 hover:opacity-90 transition-opacity">
@@ -28,37 +23,31 @@ export default function Navbar() {
             </Link>
 
             <div className="flex items-center gap-6">
-                {/* Public Links */}
-                {navItems.map((item) => (
-                    <Link
-                        key={item.href}
-                        href={item.href}
-                        className={cn(
-                            "text-sm font-medium transition-colors hover:text-blue-600 hidden md:block",
-                            pathname === item.href ? "text-blue-600 font-semibold underline underline-offset-4" : "text-gray-500"
-                        )}
-                    >
-                        {item.label}
-                    </Link>
-                ))}
 
                 {/* Authenticated Links */}
                 {user ? (
                     <>
+                        {/* Government Links */}
+                        {userData?.role === 'government' && (
+                            <Link href="/government/dashboard" className={cn("text-sm font-medium transition-colors hover:text-emerald-600", pathname === "/government/dashboard" ? "text-emerald-600 font-semibold underline underline-offset-4" : "text-gray-500")}>
+                                Dashboard
+                            </Link>
+                        )}
+
                         {/* Worker Links */}
                         {userData?.role === 'worker' && (
-                            <Link href="/workers" className={cn("text-sm font-medium transition-colors hover:text-blue-600", pathname === "/workers" ? "text-blue-600 font-semibold underline underline-offset-4" : "text-gray-500")}>
+                            <Link href="/workers" className={cn("text-sm font-medium transition-colors hover:text-emerald-600", pathname === "/workers" ? "text-emerald-600 font-semibold underline underline-offset-4" : "text-gray-500")}>
                                 Dashboard
                             </Link>
                         )}
 
                         {/* Citizen Links */}
-                        {userData?.role !== 'worker' && (
+                        {userData?.role === 'citizen' && (
                             <>
-                                <Link href="/report" className={cn("text-sm font-medium transition-colors hover:text-blue-600", pathname === "/report" ? "text-blue-600 font-semibold underline underline-offset-4" : "text-gray-500")}>
+                                <Link href="/report" className={cn("text-sm font-medium transition-colors hover:text-emerald-600", pathname === "/report" ? "text-emerald-600 font-semibold underline underline-offset-4" : "text-gray-500")}>
                                     Report
                                 </Link>
-                                <Link href="/dashboard" className={cn("text-sm font-medium transition-colors hover:text-blue-600", pathname === "/dashboard" ? "text-blue-600 font-semibold underline underline-offset-4" : "text-gray-500")}>
+                                <Link href="/dashboard" className={cn("text-sm font-medium transition-colors hover:text-emerald-600", pathname === "/dashboard" ? "text-emerald-600 font-semibold underline underline-offset-4" : "text-gray-500")}>
                                     Dashboard
                                 </Link>
                             </>
@@ -68,14 +57,19 @@ export default function Navbar() {
 
                         <div className="flex items-center gap-3 bg-gray-50 rounded-full px-4 py-2">
                             {/* Role Icon and Text */}
-                            {userData?.role === 'worker' ? (
+                            {userData?.role === 'government' ? (
+                                <>
+                                    <User className="h-5 w-5 text-purple-600" />
+                                    <span className="text-sm font-medium text-gray-700">Government</span>
+                                </>
+                            ) : userData?.role === 'worker' ? (
                                 <>
                                     <HardHat className="h-5 w-5 text-orange-600" />
                                     <span className="text-sm font-medium text-gray-700">Worker</span>
                                 </>
                             ) : (
                                 <>
-                                    <UserCircle className="h-5 w-5 text-blue-600" />
+                                    <UserCircle className="h-5 w-5 text-emerald-600" />
                                     <span className="text-sm font-medium text-gray-700">Citizen</span>
                                 </>
                             )}
