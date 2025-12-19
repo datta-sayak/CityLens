@@ -12,7 +12,7 @@ export default function Home() {
           {/* Background Image */}
           <div className="absolute inset-0 z-0">
             <Image
-              src="/city-bg.webp" 
+              src="https://images.unsplash.com/photo-1587474260584-136574528ed5" 
               alt="City Background"
               fill
               className="object-cover" 
