@@ -54,7 +54,7 @@ We use **Google Gemini 2.5 Flash** to analyze infrastructure images in real-time
 
 1. **Clone the repo**
    ```bash
-   git clone https://github.com/your-username/citylens.git
+   git clone https://github.com/datta-sayak/citylens.git
    cd citylens
    ```
 
