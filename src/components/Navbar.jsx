@@ -4,39 +4,36 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/AuthProvider";
-import { User, LogOut, HardHat, UserCircle } from "lucide-react";
+import { User, LogOut, Landmark, CheckCircle, Menu, X } from "lucide-react";
+import { useState } from "react";
 
 export default function Navbar() {
     const pathname = usePathname();
     const { user, userData, logout } = useAuth();
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     return (
-        <nav className="w-full py-3 px-6 md:px-24 flex items-center justify-between bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
-            <Link href="/" className="text-xl font-bold tracking-tight text-blue-600 flex items-center gap-3 hover:opacity-90 transition-opacity">
-                <div className="h-10 w-10 bg-blue-600 rounded-lg flex items-center justify-center shadow-md">
-                    <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                </div>
-                <span className="text-2xl">CityLens</span>
+        <nav className="w-full py-3 px-4 md:px-6 lg:px-24 flex items-center justify-between bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
+            <Link href="/" className="text-xl font-bold text-gray-900 hover:text-emerald-600 transition-colors">
+                <span className="text-2xl md:text-3xl">CityLens<span className="text-emerald-600">.</span></span>
             </Link>
 
-            <div className="flex items-center gap-6">
+            {/* Desktop Menu */}
+            <div className="hidden md:flex items-center gap-4 lg:gap-6">
 
                 {/* Authenticated Links */}
                 {user ? (
                     <>
                         {/* Government Links */}
                         {userData?.role === 'government' && (
-                            <Link href="/government/dashboard" className={cn("text-sm font-medium transition-colors hover:text-emerald-600", pathname === "/government/dashboard" ? "text-emerald-600 font-semibold underline underline-offset-4" : "text-gray-500")}>
+                            <Link href="/government" className={cn("text-sm font-medium", pathname === "/government" ? "text-emerald-600 font-semibold" : "text-gray-600 hover:text-emerald-600")}>
                                 Dashboard
                             </Link>
                         )}
 
                         {/* Worker Links */}
                         {userData?.role === 'worker' && (
-                            <Link href="/workers" className={cn("text-sm font-medium transition-colors hover:text-emerald-600", pathname === "/workers" ? "text-emerald-600 font-semibold underline underline-offset-4" : "text-gray-500")}>
+                            <Link href="/workers" className={cn("text-sm font-medium", pathname === "/workers" ? "text-emerald-600 font-semibold" : "text-gray-600 hover:text-emerald-600")}>
                                 Dashboard
                             </Link>
                         )}
@@ -44,10 +41,10 @@ export default function Navbar() {
                         {/* Citizen Links */}
                         {userData?.role === 'citizen' && (
                             <>
-                                <Link href="/report" className={cn("text-sm font-medium transition-colors hover:text-emerald-600", pathname === "/report" ? "text-emerald-600 font-semibold underline underline-offset-4" : "text-gray-500")}>
+                                <Link href="/report" className={cn("text-sm font-medium", pathname === "/report" ? "text-emerald-600 font-semibold" : "text-gray-600 hover:text-emerald-600")}>
                                     Report
                                 </Link>
-                                <Link href="/dashboard" className={cn("text-sm font-medium transition-colors hover:text-emerald-600", pathname === "/dashboard" ? "text-emerald-600 font-semibold underline underline-offset-4" : "text-gray-500")}>
+                                <Link href="/citizen" className={cn("text-sm font-medium", pathname === "/citizen" ? "text-emerald-600 font-semibold" : "text-gray-600 hover:text-emerald-600")}>
                                     Dashboard
                                 </Link>
                             </>
@@ -59,17 +56,17 @@ export default function Navbar() {
                             {/* Role Icon and Text */}
                             {userData?.role === 'government' ? (
                                 <>
-                                    <User className="h-5 w-5 text-purple-600" />
+                                    <Landmark className="h-5 w-5 text-purple-600" />
                                     <span className="text-sm font-medium text-gray-700">Government</span>
                                 </>
                             ) : userData?.role === 'worker' ? (
                                 <>
-                                    <HardHat className="h-5 w-5 text-orange-600" />
+                                    <CheckCircle className="h-5 w-5 text-orange-600" />
                                     <span className="text-sm font-medium text-gray-700">Worker</span>
                                 </>
                             ) : (
                                 <>
-                                    <UserCircle className="h-5 w-5 text-emerald-600" />
+                                    <User className="h-5 w-5 text-emerald-600" />
                                     <span className="text-sm font-medium text-gray-700">Citizen</span>
                                 </>
                             )}
@@ -100,6 +97,139 @@ export default function Navbar() {
                     </div>
                 )}
             </div>
+
+            {/* Mobile Menu Button */}
+            <button
+                className="md:hidden p-2 text-gray-600 hover:text-emerald-600"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                aria-label="Toggle menu"
+            >
+                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
+
+            {/* Mobile Menu Overlay */}
+            {mobileMenuOpen && (
+                <div className="fixed inset-0 top-[57px] bg-white z-40 md:hidden">
+                    <div className="flex flex-col p-6 space-y-4">
+                        {user ? (
+                            <>
+                                {/* Role Badge */}
+                                <div className="flex items-center gap-3 bg-gray-50 rounded-lg px-4 py-3 mb-4">
+                                    {userData?.role === 'government' ? (
+                                        <>
+                                            <Landmark className="h-5 w-5 text-purple-600" />
+                                            <span className="text-sm font-medium text-gray-700">Government</span>
+                                        </>
+                                    ) : userData?.role === 'worker' ? (
+                                        <>
+                                            <CheckCircle className="h-5 w-5 text-orange-600" />
+                                            <span className="text-sm font-medium text-gray-700">Worker</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <User className="h-5 w-5 text-emerald-600" />
+                                            <span className="text-sm font-medium text-gray-700">Citizen</span>
+                                        </>
+                                    )}
+                                    <span className="text-sm font-medium text-gray-900 ml-auto">
+                                        {userData?.name || user.displayName || "User"}
+                                    </span>
+                                </div>
+
+                                {/* Mobile Navigation Links */}
+                                {userData?.role === 'government' && (
+                                    <Link
+                                        href="/government"
+                                        className={cn(
+                                            "text-base font-medium py-2 px-4 rounded-lg transition-colors",
+                                            pathname === "/government"
+                                                ? "bg-emerald-50 text-emerald-600 font-semibold"
+                                                : "text-gray-700 hover:bg-gray-50"
+                                        )}
+                                        onClick={() => setMobileMenuOpen(false)}
+                                    >
+                                        Dashboard
+                                    </Link>
+                                )}
+
+                                {userData?.role === 'worker' && (
+                                    <Link
+                                        href="/workers"
+                                        className={cn(
+                                            "text-base font-medium py-2 px-4 rounded-lg transition-colors",
+                                            pathname === "/workers"
+                                                ? "bg-emerald-50 text-emerald-600 font-semibold"
+                                                : "text-gray-700 hover:bg-gray-50"
+                                        )}
+                                        onClick={() => setMobileMenuOpen(false)}
+                                    >
+                                        Dashboard
+                                    </Link>
+                                )}
+
+                                {userData?.role === 'citizen' && (
+                                    <>
+                                        <Link
+                                            href="/report"
+                                            className={cn(
+                                                "text-base font-medium py-2 px-4 rounded-lg transition-colors",
+                                                pathname === "/report"
+                                                    ? "bg-emerald-50 text-emerald-600 font-semibold"
+                                                    : "text-gray-700 hover:bg-gray-50"
+                                            )}
+                                            onClick={() => setMobileMenuOpen(false)}
+                                        >
+                                            Report Issue
+                                        </Link>
+                                        <Link
+                                            href="/citizen"
+                                            className={cn(
+                                                "text-base font-medium py-2 px-4 rounded-lg transition-colors",
+                                                pathname === "/citizen"
+                                                    ? "bg-emerald-50 text-emerald-600 font-semibold"
+                                                    : "text-gray-700 hover:bg-gray-50"
+                                            )}
+                                            onClick={() => setMobileMenuOpen(false)}
+                                        >
+                                            My Reports
+                                        </Link>
+                                    </>
+                                )}
+
+                                <div className="border-t border-gray-200 pt-4 mt-4">
+                                    <button
+                                        onClick={() => {
+                                            logout();
+                                            setMobileMenuOpen(false);
+                                        }}
+                                        className="w-full text-left text-base font-medium py-2 px-4 rounded-lg text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2"
+                                    >
+                                        <LogOut className="h-5 w-5" />
+                                        Logout
+                                    </button>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <Link
+                                    href="/login"
+                                    className="text-base font-medium py-2 px-4 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                >
+                                    Log in
+                                </Link>
+                                <Link
+                                    href="/register"
+                                    className="text-base font-semibold py-2 px-4 rounded-lg bg-black text-white hover:bg-gray-800 transition-colors text-center"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                >
+                                    Sign up
+                                </Link>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
         </nav>
     );
 }

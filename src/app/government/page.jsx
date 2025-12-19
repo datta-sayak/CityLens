@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { collection, query, getDocs, doc, getDoc, orderBy } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
-import Navbar from '@/components/Navbar';
 import { CheckCircle, Clock, AlertCircle, XCircle, UserCheck } from 'lucide-react';
 
 export default function GovernmentDashboard() {
@@ -165,36 +164,36 @@ export default function GovernmentDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 flex items-center justify-center">
-        <div className="text-xl text-emerald-700">Loading...</div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-xl text-gray-600">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-emerald-900 mb-2">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">
+        <div className="mb-6 md:mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
             Government Dashboard
           </h1>
-          <p className="text-emerald-700">Manage and assign infrastructure issues</p>
+          <p className="text-gray-600 text-sm md:text-base">Manage and assign infrastructure issues</p>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 md:gap-4 mb-6 md:mb-8">
           {['pending', 'assigned', 'in_progress', 'resolved', 'closed'].map((status) => (
             <div
               key={status}
-              className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-emerald-100"
+              className="bg-white rounded-lg p-3 md:p-4 shadow border border-gray-200"
             >
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-1 md:gap-2 mb-1 md:mb-2">
                 {getStatusIcon(status)}
-                <span className="text-sm font-medium text-gray-700 capitalize">
+                <span className="text-xs md:text-sm font-medium text-gray-700 capitalize">
                   {status.replace('_', ' ')}
                 </span>
               </div>
-              <div className="text-2xl font-bold text-emerald-900">
+              <div className="text-xl md:text-2xl font-bold text-gray-900">
                 {issues.filter((i) => i.status === status).length}
               </div>
             </div>
@@ -202,27 +201,27 @@ export default function GovernmentDashboard() {
         </div>
 
         {/* Issues Table */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-emerald-100 overflow-hidden">
+        <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-emerald-100">
+            <table className="w-full min-w-[640px]">
+              <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-emerald-900 uppercase tracking-wider">
+                  <th className="px-3 md:px-6 py-2 md:py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                     Title
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-emerald-900 uppercase tracking-wider">
+                  <th className="px-3 md:px-6 py-2 md:py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider hidden sm:table-cell">
                     Category
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-emerald-900 uppercase tracking-wider">
+                  <th className="px-3 md:px-6 py-2 md:py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-emerald-900 uppercase tracking-wider">
+                  <th className="px-3 md:px-6 py-2 md:py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider hidden lg:table-cell">
                     Assigned To
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-emerald-900 uppercase tracking-wider">
+                  <th className="px-3 md:px-6 py-2 md:py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider hidden md:table-cell">
                     Created
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-emerald-900 uppercase tracking-wider">
+                  <th className="px-3 md:px-6 py-2 md:py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -230,34 +229,34 @@ export default function GovernmentDashboard() {
               <tbody className="divide-y divide-emerald-100">
                 {issues.map((issue) => (
                   <tr key={issue.id} className="hover:bg-emerald-50">
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                    <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium text-gray-900">
                       {issue.title}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-700">
+                    <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm text-gray-700 hidden sm:table-cell">
                       {issue.category || 'N/A'}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 md:px-6 py-3 md:py-4">
                       <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                        className={`inline-flex items-center gap-1 px-2 md:px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
                           issue.status
                         )}`}
                       >
                         {getStatusIcon(issue.status)}
-                        {issue.status?.replace('_', ' ') || 'pending'}
+                        <span className="hidden sm:inline">{issue.status?.replace('_', ' ') || 'pending'}</span>
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-700">
+                    <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm text-gray-700 hidden lg:table-cell">
                       {issue.assignedTo
                         ? workers.find((w) => w.uid === issue.assignedTo)?.name ||
                           'Unknown'
                         : '-'}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
+                    <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm text-gray-500 hidden md:table-cell">
                       {issue.createdAt
                         ? new Date(issue.createdAt).toLocaleDateString()
                         : '-'}
                     </td>
-                    <td className="px-6 py-4 text-sm">
+                    <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm">
                       {issue.status === 'pending' && (
                         <button
                           onClick={() => setSelectedIssue(issue.id)}

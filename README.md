@@ -1,141 +1,85 @@
-# CityLens - Transparent Urban Issue Tracker
+# CityLens
 
-A Next.js web application enabling citizens to report infrastructure issues and municipal workers to manage them transparently.
+**CityLens** is an urban issue tracking platform built to bridge the gap between citizens and city officials. It uses AI to categorize reports and real-time maps to visualize what's happening in the city, making maintenance transparent and efficient.
 
-## Features
+## The Problem
+Broken infrastructure stays broken for months because:
+- ❌ **Black Holes**: Citizens report issues but never hear back.
+- ❌ **No Accountability**: No way to track who is working on it.
+- ❌ **Too Complex**: Complicated forms mean people just don't bother reporting.
 
-### 1. Public Citizen Reporting Portal (`/report`)
-- Dynamic issue reporting form (Title, Description)
-- Browser-native image upload with preview
-- One-click geolocation capture
-- Real-time Firebase Storage integration
-- Transparency notice for public visibility
-- Success notifications with auto-redirect
+**CityLens** fixes this with transparency, speed, and AI.
 
-### 2. Citizen Dashboard (`/my-reports`)
-- Personalized view of submitted reports
-- Status tracking (Open, In Progress, Resolved)
-- Tab-based filtering system
-- Visual cards with images and timestamps
-- Direct Google Maps links for locations
-- Actionable empty states
+## How It Works
 
-### 3. Worker Task Management (`/workers`)
-- Unified task board for all issues
-- Status update actions:
-  - "Start Working" (Open → In Progress)
-  - "Mark Resolved" (In Progress → Resolved)
-  - "Re-open" capability
-- Real-time statistics dashboard
-- Full task context with photos and locations
+### 1. Citizen Reports (10 Seconds) 📸
+No forms. No hassle.
+- **Snap a photo**: Our **AI** analyzes it to detect the issue (e.g., "Severe Pothole") automatically.
+- **Auto-Location**: GPS tags the exact spot.
+- **Submit**: It's live on the public map instantly.
 
-### 4. Public Issues Board (`/issues`)
-- Live feed of all reported issues
-- Interactive Leaflet map with issue markers
-- Real-time Firestore synchronization
-- Status visibility for transparency
+### 2. Government Action ⚡
+- **Assignment**: Use the dashboard to assign a specific worker.
+- **Accountability**: The worker's name becomes **publicly visible** on the ticket. Everyone knows who is responsible.
+
+### 3. Resolution & Verification ✅
+- **Proof of Work**: Workers must upload a photo to mark it "Resolved".
+- **Citizen Review**: The person who reported it gets to say "Yes, it's fixed" or "No, try again".
 
 ## Tech Stack
+- 💻 **Frontend**: Next.js 14, Tailwind CSS, ShadCN UI
+- 🔥 **Backend**: Firebase (Firestore, Auth, Storage)
+- 🧠 **AI**: Google Gemini
+- 🌍 **Maps**: Leaflet
 
-- **Framework**: Next.js 14 (App Router)
-- **Language**: JavaScript (.jsx)
-- **Styling**: Tailwind CSS v4
-- **Backend**: Firebase (Auth, Firestore, Storage)
-- **Maps**: Leaflet + react-leaflet
-- **Icons**: Lucide React
+## Technical Implementation
 
-## Setup Instructions
+### 🧠 AI Analysis Engine
+We use **Google Gemini 2.5 Flash** to analyze infrastructure images in real-time.
+- **Input**: Base64 encoded image from the user's camera.
+- **Processing**: The model is prompted to act as a civil engineer, detecting specific defects (potholes, debris, etc.) and assigning a severity score.
+- **Output**: Returns a strict JSON object with `defectType`, `severity`, and a technical description, ensuring data consistency for the database.
 
-### 1. Install Dependencies
-```bash
-npm install
-```
+### 📍 Real-time Mapping
+- **Leaflet & React-Leaflet**: Renders an interactive map of the city.
+- **Geospatial Data**: User location is captured via the browser's Geolocation API and stored as lat/lng coordinates in Firestore.
+- **Dynamic Re-centering**: The map automatically focuses on the user's location or the specific issue being reviewed.
 
-### 2. Configure Firebase
-1. Create a Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
-2. Enable Authentication, Firestore, and Storage
-3. Copy `env.example` to `.env.local`:
-```bash
-cp env.example .env.local
-```
-4. Add your Firebase credentials to `.env.local`
+### 🔥 Backend & Database
+- **Firebase Firestore**: Stores issue tickets, user profiles, and status updates. Real-time listeners ensure the dashboard updates instantly without refreshing.
+- **Firebase Storage**: Securely hosts "Before" and "Proof of Work" images.
+- **Authentication**: Role-based access control (Citizen vs. Government vs. Worker) checks user claims before rendering protected routes.
 
-### 3. Firestore Security Rules
-Set up basic rules in Firebase Console:
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /issues/{issueId} {
-      allow read: if true;
-      allow create: if true;
-      allow update: if true;
-    }
-  }
-}
-```
+## Getting Started
 
-### 4. Storage Rules
-```javascript
-rules_version = '2';
-service firebase.storage {
-  match /b/{bucket}/o {
-    match /issues/{allPaths=**} {
-      allow read: if true;
-      allow write: if true;
-    }
-  }
-}
-```
+1. **Clone the repo**
+   ```bash
+   git clone https://github.com/your-username/citylens.git
+   cd citylens
+   ```
 
-### 5. Run Development Server
-```bash
-npm run dev
-```
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-Visit [http://localhost:3000](http://localhost:3000)
+3. **Configure Environment**
+   Create a `.env.local` file with your credentials (see `env.example`).
 
-## Project Structure
+4. **Run it**
+   ```bash
+   npm run dev
+   ```
+   Open [http://localhost:3000](http://localhost:3000).
 
-```
-src/
-├── app/
-│   ├── page.jsx              # Landing page
-│   ├── report/page.jsx       # Citizen reporting portal
-│   ├── my-reports/page.jsx   # Citizen dashboard
-│   ├── workers/page.jsx      # Worker task board
-│   ├── issues/page.jsx       # Public issues board
-│   ├── layout.jsx            # Root layout
-│   └── globals.css           # Global styles
-├── components/
-│   └── IssuesMap.jsx         # Leaflet map component
-└── lib/
-    ├── firebase.js           # Firebase configuration
-    └── utils.js              # Utility functions
-```
 
-## Usage
+## Team Average
 
-### For Citizens
-1. Visit `/report` to submit an issue
-2. Fill in title, description, upload photo
-3. Click "Get Current Location" for geolocation
-4. Submit and view on `/issues` or `/my-reports`
+- [Sayak](https://github.com/datta-sayak)
+- [Sunayana](https://github.com/Sunayana-005)
+- [Sidhant](https://github.com/SuperiorDevelop)
+- Koushani
 
-### For Workers
-1. Visit `/workers` to see all tasks
-2. Click "Start Working" on open issues
-3. Click "Mark Resolved" when complete
-4. Re-open if needed
-
-### For Public
-- Visit `/issues` to see all reports and map
-- View real-time status updates
-
-## Philosophy
-
-**Transparency First**: Every report, status change, and resolution is instantly visible to the public, building trust between municipalities and citizens.
-
-## License
-
-MIT
+---
+*Created for Cosmohack1 (Open Innovation Track)*
+*Built by Team Average with the assistance of AI tools.*

@@ -32,8 +32,8 @@ export default function ReportPage() {
   // Show loading while checking authentication
   if (user === undefined) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-green-600" />
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
       </div>
     );
   }
@@ -108,6 +108,11 @@ export default function ReportPage() {
       return;
     }
 
+    if (!location) {
+      alert("Please capture your location before submitting.");
+      return;
+    }
+
     console.log("Form submitted - starting...");
     setLoading(true);
 
@@ -166,28 +171,29 @@ export default function ReportPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 py-12 px-4">
+    <div className="min-h-screen bg-gray-50 py-8 md:py-12 px-4">
       <div className="container max-w-2xl mx-auto">
-        <div className="mb-10 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-green-600 to-emerald-600 shadow-lg shadow-green-500/30 mb-6">
-            <Upload className="h-8 w-8 text-white" />
+        <div className="mb-8 md:mb-10 text-center">
+          <div className="inline-flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-lg bg-emerald-600 mb-4 md:mb-6">
+            <Upload className="h-7 w-7 md:h-8 md:w-8 text-white" />
           </div>
-          <h1 className="text-5xl font-bold tracking-tight bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">Report an Issue</h1>
-          <p className="text-gray-600 mt-3 text-lg">
+          <h1 className="text-3xl md:text-5xl font-bold text-gray-900">Report an Issue</h1>
+          <p className="text-gray-600 mt-2 md:mt-3 text-base md:text-lg px-4">
             Help us fix the city by reporting infrastructure problems.
           </p>
         </div>
 
-        <div className="bg-white/80 backdrop-blur-xl p-8 rounded-3xl border border-gray-200 shadow-2xl shadow-green-100/50">
+        <div className="bg-white p-6 md:p-8 rounded-lg border border-gray-200 shadow">
           <form onSubmit={handleSubmit} className="space-y-8">
             <div className="space-y-3">
               <label className="text-sm font-semibold text-gray-700">
                 Photo Evidence <span className="text-red-500">*</span>
               </label>
-              <div className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:border-green-500 hover:bg-green-50/50 transition-all ${previewUrl ? 'border-green-600 bg-green-50/30' : 'border-gray-300'}`}>
+              <div className={`border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:border-emerald-500 transition-colors ${previewUrl ? 'border-emerald-600 bg-emerald-50/50' : 'border-gray-300'}`}>
             <input
               type="file"
               accept="image/*"
+              required
               className="hidden"
               id="image-upload"
               onChange={handleImageChange}
@@ -258,8 +264,8 @@ export default function ReportPage() {
             )}
 
             <div className="space-y-2">
-              <label className="text-sm font-medium leading-none">
-                Issue Title {aiAnalyzed && <span className="text-xs text-green-600">(AI-filled, editable)</span>}
+              <label className="text-sm font-medium leading-none text-gray-900">
+                Issue Title <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -267,20 +273,20 @@ export default function ReportPage() {
                 placeholder="e.g., Pothole on Main St"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className={`w-full h-10 rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-600 ${aiAnalyzed ? "border-green-300" : "border-gray-300"}`}
+                className={`w-full h-10 rounded-md border px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-emerald-600 ${aiAnalyzed ? "border-emerald-300" : "border-gray-300"}`}
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium leading-none">
-                Description {aiAnalyzed && <span className="text-xs text-green-600">(AI-filled, editable)</span>}
+              <label className="text-sm font-medium leading-none text-gray-900">
+                Description <span className="text-red-500">*</span>
               </label>
               <textarea
                 placeholder="Describe the issue in detail..."
                 required
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className={`w-full min-h-[80px] rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-600 ${aiAnalyzed ? "border-green-300" : "border-gray-300"}`}
+                className={`w-full min-h-[80px] rounded-md border px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-emerald-600 ${aiAnalyzed ? "border-emerald-300" : "border-gray-300"}`}
               />
             </div>
           </>
@@ -289,8 +295,8 @@ export default function ReportPage() {
         {previewUrl && (
           <>
             <div className="space-y-2">
-              <label className="text-sm font-medium leading-none">
-                Location <span className="text-xs text-gray-500">(Optional)</span>
+              <label className="text-sm font-medium leading-none text-gray-900">
+                Location <span className="text-red-500">*</span>
               </label>
               <div className="flex items-center gap-2">
                 <button
@@ -309,7 +315,7 @@ export default function ReportPage() {
               )}
               {!location && (
                 <p className="text-xs text-gray-500">
-                  Location helps workers find the issue faster, but you can submit without it.
+                  Location is required to help workers find and fix the issue faster.
                 </p>
               )}
             </div>
@@ -329,8 +335,8 @@ export default function ReportPage() {
 
             <button 
               type="submit" 
-              disabled={loading || !formData.title || !imageFile}
-              className="w-full h-11 px-8 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 text-sm font-medium inline-flex items-center justify-center disabled:opacity-50 disabled:pointer-events-none"
+              disabled={loading || !formData.title || !formData.description || !imageFile || !location}
+              className="w-full h-11 px-8 py-2 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 text-sm font-medium inline-flex items-center justify-center disabled:opacity-50 disabled:pointer-events-none"
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Submit Report

@@ -27,9 +27,9 @@ export default function RegisterPage() {
             if (role === 'worker') {
                 router.push("/workers");
             } else if (role === 'government') {
-                router.push("/government/dashboard");
+                router.push("/government");
             } else {
-                router.push("/dashboard");
+                router.push("/citizen");
             }
         } catch (err) {
             console.error(err);
@@ -46,80 +46,71 @@ export default function RegisterPage() {
     };
 
     return (
-        <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-gradient-to-br from-green-50 via-white to-emerald-50 px-4 py-12 sm:px-6 lg:px-8">
-            <div className="w-full max-w-md space-y-8 bg-white/80 backdrop-blur-xl p-10 rounded-2xl border border-gray-200 shadow-2xl shadow-green-100/50">
+        <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-gray-50 px-4 py-12">
+            <div className="w-full max-w-md space-y-6 bg-white p-8 rounded-lg border border-gray-200 shadow">
                 <div className="text-center">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-green-600 to-emerald-600 shadow-lg shadow-green-500/30 mb-6">
-                        <User className="h-8 w-8 text-white" />
+                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-emerald-600 mb-4">
+                        <User className="h-6 w-6 text-white" />
                     </div>
-                    <h2 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                    <h2 className="text-2xl font-bold text-gray-900">
                         Create Account
                     </h2>
-                    <p className="mt-3 text-sm text-gray-600">
+                    <p className="mt-2 text-sm text-gray-600">
                         Join CityLens to improve your community.
                     </p>
                 </div>
 
-                <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+                <form className="space-y-4" onSubmit={handleSubmit}>
                     <div className="space-y-4">
-                        <div className="relative group">
-                            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-                                <User className="h-5 w-5 text-gray-400 group-focus-within:text-green-600 transition-colors" />
-                            </div>
+                        <div className="relative">
+                            <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                             <input
                                 id="name"
                                 name="name"
                                 type="text"
                                 required
-                                className="block w-full rounded-xl border-2 border-gray-200 bg-gray-50 py-3 pl-12 pr-4 text-sm placeholder-gray-400 focus:border-green-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-green-500/10 transition-all"
+                                className="w-full rounded-md border border-gray-300 pl-10 pr-3 py-2 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                                 placeholder="Full Name"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
                             />
                         </div>
-                        <div className="relative group">
-                            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-                                <Mail className="h-5 w-5 text-gray-400 group-focus-within:text-green-600 transition-colors" />
-                            </div>
+                        <div className="relative">
+                            <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                             <input
                                 id="email-address"
                                 name="email"
                                 type="email"
                                 autoComplete="email"
                                 required
-                                className="block w-full rounded-xl border-2 border-gray-200 bg-gray-50 py-3 pl-12 pr-4 text-sm placeholder-gray-400 focus:border-green-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-green-500/10 transition-all"
+                                className="w-full rounded-md border border-gray-300 pl-10 pr-3 py-2 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                                 placeholder="Email address"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                             />
                         </div>
-                        <div className="relative group">
-                            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-                                <Lock className="h-5 w-5 text-gray-400 group-focus-within:text-green-600 transition-colors" />
-                            </div>
+                        <div className="relative">
+                            <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                             <input
                                 id="password"
                                 name="password"
                                 type="password"
                                 autoComplete="new-password"
                                 required
-                                className="block w-full rounded-xl border-2 border-gray-200 bg-gray-50 py-3 pl-12 pr-4 text-sm placeholder-gray-400 focus:border-green-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-green-500/10 transition-all"
+                                className="w-full rounded-md border border-gray-300 pl-10 pr-3 py-2 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                                 placeholder="Password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                             />
                         </div>
 
-                        {/* Role Selection */}
-                        <div className="relative group">
-                            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-                                <Briefcase className="h-5 w-5 text-gray-400 group-focus-within:text-emerald-600 transition-colors" />
-                            </div>
+                        <div className="relative">
+                            <Briefcase className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                             <select
                                 id="role"
                                 name="role"
                                 required
-                                className="block w-full rounded-xl border-2 border-gray-200 bg-gray-50 py-3 pl-12 pr-4 text-sm text-gray-700 focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all appearance-none cursor-pointer"
+                                className="w-full rounded-md border border-gray-300 pl-10 pr-3 py-2 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                                 value={role}
                                 onChange={(e) => setRole(e.target.value)}
                             >
@@ -130,28 +121,24 @@ export default function RegisterPage() {
                         </div>
                     </div>
 
-                    <div>
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="group relative flex w-full justify-center rounded-md border border-transparent bg-blue-600 py-2 px-4 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
-                        >
-                            {loading ? (
-                                <Loader2 className="animate-spin h-5 w-5" />
-                            ) : (
-                                "Create Account"
-                            )}
-                        </button>
-                    </div>
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full rounded-md bg-emerald-600 py-2 px-4 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
+                    >
+                        {loading ? (
+                            <Loader2 className="animate-spin h-5 w-5 mx-auto" />
+                        ) : (
+                            "Create Account"
+                        )}
+                    </button>
                 </form>
 
-                <div className="text-center text-sm">
-                    <p className="text-gray-600">
-                        Already have an account?{" "}
-                        <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">
-                            Sign in
-                        </Link>
-                    </p>
+                <div className="text-center text-sm text-gray-600">
+                    Already have an account?{" "}
+                    <Link href="/login" className="font-medium text-emerald-600 hover:text-emerald-700">
+                        Sign in
+                    </Link>
                 </div>
             </div>
         </div>
