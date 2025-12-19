@@ -93,12 +93,52 @@ export default function ReportPage() {
     }
   };
 
+  const [analyzing, setAnalyzing] = useState(false); // AI State
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       setImageFile(file);
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
+    }
+  };
+
+  const analyzeImage = async () => {
+    if (!imageFile) return;
+    setAnalyzing(true);
+    try {
+      // 1. Convert file to base64
+      const reader = new FileReader();
+      reader.readAsDataURL(imageFile);
+      reader.onloadend = async () => {
+        const base64Image = reader.result;
+
+        // 2. Call API
+        const response = await fetch("/api/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: base64Image }),
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+          alert("AI Analysis Error: " + data.error);
+        } else {
+          // 3. Pre-fill form
+          setFormData({
+            title: data.title || "Detected Issue",
+            description: `${data.description}\n\nDetected Issue: ${data.defectType}\nSeverity: ${data.severity}`
+          });
+          alert(`AI Detected: ${data.defectType} (${data.severity} Severity)`);
+        }
+        setAnalyzing(false);
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Failed to analyze image");
+      setAnalyzing(false);
     }
   };
 
@@ -209,7 +249,7 @@ export default function ReportPage() {
           <label className="text-sm font-medium leading-none">
             Photo Evidence
           </label>
-          <div className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-accent/50 transition ${previewUrl ? 'border-primary' : 'border-muted-foreground/25'}`}>
+          <div className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-gray-50 transition ${previewUrl ? 'border-blue-600' : 'border-gray-300'}`}>
             <input
               type="file"
               accept="image/*"
@@ -227,12 +267,27 @@ export default function ReportPage() {
                 </div>
               ) : (
                 <>
-                  <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                  <span className="text-sm text-muted-foreground">Click to upload image</span>
+                  <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                  <span className="text-sm text-gray-500">Click to upload image</span>
                 </>
               )}
             </label>
           </div>
+
+          {previewUrl && (
+            <div className="mt-2">
+              <Button
+                type="button"
+                onClick={analyzeImage}
+                loading={analyzing}
+                disabled={analyzing}
+                variant="outline"
+                className="w-full border-blue-600 text-blue-600 hover:bg-blue-50"
+              >
+                {analyzing ? "AI is Analyzing..." : "✨ Auto-Analyze with AI"}
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="rounded-md border border-gray-200 p-4">
@@ -251,7 +306,7 @@ export default function ReportPage() {
         <Button type="submit" className="w-full" size="lg" loading={loading} disabled={!location || !formData.title}>
           Submit Report
         </Button>
-      </form>
-    </div>
+      </form >
+    </div >
   );
 }
