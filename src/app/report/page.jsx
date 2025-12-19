@@ -2,181 +2,115 @@
 
 import { useState } from "react";
 import { Upload, MapPin, Loader2, CheckCircle } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { db, storage } from "@/lib/firebase"; // We'll assume these work or mock them if env not set
+import { db, storage } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useRouter } from "next/navigation";
-
-// UI Components (Inline for simplicity)
-
-function Button({ className, variant = "default", size = "default", loading, children, ...props }) {
-  const variants = {
-    default: "bg-blue-600 text-white hover:bg-blue-700",
-    outline: "border border-gray-300 bg-white hover:bg-gray-50 text-gray-700",
-    ghost: "hover:bg-gray-100 text-gray-700",
-    link: "text-blue-600 underline-offset-4 hover:underline",
-  };
-  const sizes = {
-    default: "h-10 px-4 py-2",
-    sm: "h-9 rounded-md px-3",
-    lg: "h-11 rounded-md px-8",
-    icon: "h-10 w-10",
-  };
-  return (
-    <button
-      className={cn(
-        "inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
-        variants[variant],
-        sizes[size],
-        className
-      )}
-      disabled={loading || props.disabled}
-      {...props}
-    >
-      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-      {children}
-    </button>
-  );
-}
-
-function Input({ className, ...props }) {
-  return (
-    <input
-      className={cn(
-        "flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-        className
-      )}
-      {...props}
-    />
-  );
-}
-
-function Textarea({ className, ...props }) {
-  return (
-    <textarea
-      className={cn(
-        "flex min-h-[80px] w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-        className
-      )}
-      {...props}
-    />
-  )
-}
+import { useAuth } from "@/components/AuthProvider";
 
 export default function ReportPage() {
+  const { user } = useAuth();
+  const router = useRouter();
+  
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [location, setLocation] = useState(null);
   const [imageFile, setImageFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
-
-  const router = useRouter();
-
-  // Simple form handling without external library overhead for now to keep it "Basic"
-  // actually I imported useForm but let's stick to simple controlled inputs if we want "basic".
-  // Nah, controlled is fine.
   const [formData, setFormData] = useState({ title: "", description: "" });
+  const [analyzing, setAnalyzing] = useState(false);
+  const [aiAnalyzed, setAiAnalyzed] = useState(false);
+  const [aiData, setAiData] = useState(null);
 
   const handleLocationClick = () => {
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition((position) => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by this browser.");
+      return;
+    }
+    
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
         setLocation({
           lat: position.coords.latitude,
           lng: position.coords.longitude,
         });
-      }, (error) => {
-        alert("Error getting location: " + error.message);
-      });
-    } else {
-      alert("Geolocation is not supported by your browser.");
-    }
+      },
+      (error) => {
+        console.error("Error getting location: ", error);
+        alert("Error getting location. Please enable location services.");
+      }
+    );
   };
-
-  const [analyzing, setAnalyzing] = useState(false); // AI State
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setImageFile(file);
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
-    }
-  };
-
-  const analyzeImage = async () => {
-    if (!imageFile) return;
-    setAnalyzing(true);
-    try {
-      // 1. Convert file to base64
-      const reader = new FileReader();
-      reader.readAsDataURL(imageFile);
-      reader.onloadend = async () => {
-        const base64Image = reader.result;
-
-        // 2. Call API
+    if (!file) return;
+    
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      setPreviewUrl(reader.result);
+      
+      // Auto-trigger AI analysis
+      setAnalyzing(true);
+      setAiAnalyzed(false);
+      
+      try {
         const response = await fetch("/api/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ image: base64Image }),
+          body: JSON.stringify({ image: reader.result }),
         });
 
-        const data = await response.json();
-
-        if (data.error) {
-          alert("AI Analysis Error: " + data.error);
-        } else {
-          // 3. Pre-fill form
-          setFormData({
-            title: data.title || "Detected Issue",
-            description: `${data.description}\n\nDetected Issue: ${data.defectType}\nSeverity: ${data.severity}`
-          });
-          alert(`AI Detected: ${data.defectType} (${data.severity} Severity)`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.isDefect) {
+            setAiData(data);
+            setFormData({ title: data.title || "", description: data.description || "" });
+            setAiAnalyzed(true);
+          }
         }
+      } catch (error) {
+        console.error("Analysis error:", error);
+      } finally {
         setAnalyzing(false);
       }
-    } catch (error) {
-      console.error(error);
-      alert("Failed to analyze image");
-      setAnalyzing(false);
-    }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    console.log("Form submitted - starting...");
     setLoading(true);
 
     try {
-      let imageUrl = "";
-      if (imageFile) {
-        // Upload image
-        const storageRef = ref(storage, `issues/${Date.now()}_${imageFile.name}`);
-        const snapshot = await uploadBytes(storageRef, imageFile);
-        imageUrl = await getDownloadURL(snapshot.ref);
-      }
+      // For now, skip image upload and just save the report
+      console.log("Saving to Firestore (without image upload)...");
 
-      await addDoc(collection(db, "issues"), {
+      const docRef = await addDoc(collection(db, "issues"), {
         title: formData.title,
         description: formData.description,
-        location: location,
-        imageUrl: imageUrl,
+        location: location || null,
+        imageUrl: "", // Empty for now
         status: "OPEN",
         createdAt: serverTimestamp(),
-        // For now, anonymous or we can add auth later
-        userId: "anonymous"
+        userId: user?.uid || "anonymous",
+        userEmail: user?.email || "anonymous",
       });
 
+      console.log("Report saved successfully:", docRef.id);
       setSuccess(true);
-      setTimeout(() => {
-        router.push("/issues");
-      }, 2000);
+      setTimeout(() => router.push("/issues"), 2000);
     } catch (error) {
       console.error("Error submitting report:", error);
-      alert("Failed to submit report. check console.");
-    } finally {
+      console.error("Error details:", error.message, error.code);
+      alert(`Failed to submit report: ${error.message}`);
       setLoading(false);
     }
   };
+
 
   if (success) {
     return (
@@ -190,66 +124,25 @@ export default function ReportPage() {
   }
 
   return (
-    <div className="container max-w-lg mx-auto py-10 px-4">
-      <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold tracking-tight">Report an Issue</h1>
-        <p className="text-muted-foreground mt-2">
-          Help us fix the city by reporting infrastructure problems.
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="space-y-2">
-          <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-            Issue Title
-          </label>
-          <Input
-            required
-            placeholder="e.g., Pothole on Main St"
-            value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium leading-none">
-            Description
-          </label>
-          <Textarea
-            placeholder="Describe the issue in detail..."
-            required
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium leading-none">
-            Location
-          </label>
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={handleLocationClick}
-            >
-              <MapPin className="mr-2 h-4 w-4" />
-              {location ? "Location Captured" : "Get Current Location"}
-            </Button>
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 py-12 px-4">
+      <div className="container max-w-2xl mx-auto">
+        <div className="mb-10 text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-green-600 to-emerald-600 shadow-lg shadow-green-500/30 mb-6">
+            <Upload className="h-8 w-8 text-white" />
           </div>
-          {location && (
-            <p className="text-xs text-muted-foreground">
-              Lat: {location.lat.toFixed(4)}, Lng: {location.lng.toFixed(4)}
-            </p>
-          )}
+          <h1 className="text-5xl font-bold tracking-tight bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">Report an Issue</h1>
+          <p className="text-gray-600 mt-3 text-lg">
+            Help us fix the city by reporting infrastructure problems.
+          </p>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium leading-none">
-            Photo Evidence
-          </label>
-          <div className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-gray-50 transition ${previewUrl ? 'border-blue-600' : 'border-gray-300'}`}>
+        <div className="bg-white/80 backdrop-blur-xl p-8 rounded-3xl border border-gray-200 shadow-2xl shadow-green-100/50">
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="space-y-3">
+              <label className="text-sm font-semibold text-gray-700">
+                Photo Evidence <span className="text-xs text-gray-500">(Optional - Firebase Storage needed for uploads)</span>
+              </label>
+              <div className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:border-green-500 hover:bg-green-50/50 transition-all ${previewUrl ? 'border-green-600 bg-green-50/30' : 'border-gray-300'}`}>
             <input
               type="file"
               accept="image/*"
@@ -269,44 +162,142 @@ export default function ReportPage() {
                 <>
                   <Upload className="h-8 w-8 text-gray-400 mb-2" />
                   <span className="text-sm text-gray-500">Click to upload image</span>
+                  <span className="text-xs text-gray-400 mt-1">Upload a photo to get started</span>
                 </>
               )}
             </label>
           </div>
-
-          {previewUrl && (
-            <div className="mt-2">
-              <Button
-                type="button"
-                onClick={analyzeImage}
-                loading={analyzing}
-                disabled={analyzing}
-                variant="outline"
-                className="w-full border-blue-600 text-blue-600 hover:bg-blue-50"
-              >
-                {analyzing ? "AI is Analyzing..." : "✨ Auto-Analyze with AI"}
-              </Button>
-            </div>
-          )}
         </div>
 
-        <div className="rounded-md border border-gray-200 p-4">
-          <div className="flex gap-3">
-            <div className="flex-shrink-0">
-              <div className="h-5 w-5 rounded-full border-2 border-black flex items-center justify-center">
-                <span className="text-xs font-bold">i</span>
+        {previewUrl && (
+          <>
+            {analyzing && (
+              <div className="rounded-lg bg-blue-50 border border-blue-200 p-4 flex items-center gap-3">
+                <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+                <div>
+                  <p className="text-sm font-medium text-blue-900">AI is analyzing your image...</p>
+                  <p className="text-xs text-blue-700">This will only take a moment</p>
+                </div>
+              </div>
+            )}
+
+            {aiAnalyzed && aiData && (
+              <div className="rounded-lg bg-green-50 border border-green-200 p-4">
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-green-900">AI Analysis Complete!</p>
+                    <p className="text-xs text-green-700 mt-1">
+                      Detected: <span className="font-semibold">{aiData.defectType}</span> • 
+                      Severity: <span className="font-semibold">{aiData.severity}</span>
+                    </p>
+                    <p className="text-xs text-green-600 mt-2">
+                      Fields below have been auto-filled. You can edit them if needed.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!analyzing && !aiAnalyzed && (
+              <div className="rounded-lg bg-yellow-50 border border-yellow-200 p-4">
+                <div className="flex items-start gap-3">
+                  <div className="h-5 w-5 rounded-full border-2 border-yellow-600 flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs font-bold text-yellow-600">!</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-yellow-900">AI analysis in progress or no defect detected</p>
+                    <p className="text-xs text-yellow-700 mt-1">
+                      Please fill in the details manually or re-analyze the image.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none">
+                Issue Title {aiAnalyzed && <span className="text-xs text-green-600">(AI-filled, editable)</span>}
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="e.g., Pothole on Main St"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                className={`w-full h-10 rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-600 ${aiAnalyzed ? "border-green-300" : "border-gray-300"}`}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none">
+                Description {aiAnalyzed && <span className="text-xs text-green-600">(AI-filled, editable)</span>}
+              </label>
+              <textarea
+                placeholder="Describe the issue in detail..."
+                required
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                className={`w-full min-h-[80px] rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-600 ${aiAnalyzed ? "border-green-300" : "border-gray-300"}`}
+              />
+            </div>
+          </>
+        )}
+
+        {previewUrl && (
+          <>
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none">
+                Location <span className="text-xs text-gray-500">(Optional)</span>
+              </label>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="w-full h-10 px-4 py-2 rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium inline-flex items-center justify-center"
+                  onClick={handleLocationClick}
+                >
+                  <MapPin className="mr-2 h-4 w-4" />
+                  {location ? "Location Captured" : "Get Current Location"}
+                </button>
+              </div>
+              {location && (
+                <p className="text-xs text-muted-foreground">
+                  Lat: {location.lat.toFixed(4)}, Lng: {location.lng.toFixed(4)}
+                </p>
+              )}
+              {!location && (
+                <p className="text-xs text-gray-500">
+                  Location helps workers find the issue faster, but you can submit without it.
+                </p>
+              )}
+            </div>
+
+            <div className="rounded-md border border-gray-200 p-4">
+              <div className="flex gap-3">
+                <div className="flex-shrink-0">
+                  <div className="h-5 w-5 rounded-full border-2 border-black flex items-center justify-center">
+                    <span className="text-xs font-bold">i</span>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600">
+                  Transparency Notice: Your report will be publicly visible to foster trust and accountability.
+                </p>
               </div>
             </div>
-            <p className="text-sm text-gray-600">
-              Transparency Notice: Your report will be publicly visible to foster trust and accountability.
-            </p>
-          </div>
-        </div>
 
-        <Button type="submit" className="w-full" size="lg" loading={loading} disabled={!location || !formData.title}>
-          Submit Report
-        </Button>
-      </form >
-    </div >
+            <button 
+              type="submit" 
+              disabled={loading || !formData.title}
+              className="w-full h-11 px-8 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 text-sm font-medium inline-flex items-center justify-center disabled:opacity-50 disabled:pointer-events-none"
+            >
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Submit Report
+            </button>
+          </>
+        )}
+      </form>
+        </div>
+      </div>
+    </div>
   );
 }
